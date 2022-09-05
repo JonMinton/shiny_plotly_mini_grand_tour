@@ -68,6 +68,14 @@ server <- function(input, output, ...) {
         ) %>%
         plot_ly(x = ~date, y = ~median) %>%
         add_lines() %>%
+        add_markers(
+          data =  txhousing %>%
+                  filter(
+                    city == this_city,
+                    year == this_year,
+                    month == this_month
+                  )
+        ) %>%
         layout(margin = list(r = 30), # set right margin
                showlegend = FALSE,
                title = "Time varying subplot"
@@ -79,7 +87,17 @@ server <- function(input, output, ...) {
           year == this_year,
           month == this_month
         ) %>%
-      plot_ly(x = ~median, y = ~forcats::fct_reorder(city, median)) %>%
+      mutate(
+        selected_city = city == this_city
+      ) %>%
+      plot_ly(
+        x = ~median,
+        y = ~forcats::fct_reorder(city, median),
+        symbol = ~selected_city,
+
+        color = ~selected_city,
+        colors = c(`FALSE` = 'black', `TRUE` = 'red')
+        ) %>%
       add_markers() %>%
       layout(margin = list(l = 30), # set left margin
              yaxis = list(side = "right"),
