@@ -1,7 +1,10 @@
-#plot_ly(nc)
+library(sf)
+library(plotly)
+library(tidyverse)
+library(shiny)
 
-#num_features <- dim(nc)[1]
-
+fname <- system.file("shape/nc.shp", package="sf")
+nc <- st_read(fname)
 
 nc_names <- nc[,"NAME"] %>% st_drop_geometry()
 
