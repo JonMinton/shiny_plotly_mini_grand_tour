@@ -27,7 +27,9 @@ nc2 <- nc %>%
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-
+  
+  shinyjs::useShinyjs(),
+  
   # Application title
   titlePanel("Map with animation"),
   actionButton("generate_map", "Click to generate map"),
@@ -83,9 +85,23 @@ server <- function(input, output) {
       p <- make_map()
       b <- plotly_build(p)
       this_place <- b$x$data[[this_curveNumber + 1]]$name
-      this_year  <- b$x$data[[this_curveNumber + 1]]$frame
+      
+      shinyjs::runjs("
+            // There are 4 elements with slider-label as class name, the first one is
+            // the text on the top RHS of the slider, the other 3 are the slider options
+
+            let text = document.getElementsByClassName('slider-label')[0].innerHTML;
+
+            // get year out of inner text
+
+            let year_js = text.replace('year: ', '');
+
+            // Sends year_js to input$year_shiny
+            Shiny.setInputValue('year_shiny', year_js);
+      "
+      )      
       # the +1 is needed as JavaScript is 0 indexed but R is 1 indexed
-      glue::glue("curveNumber {this_curveNumber} is {this_place}. Is the selected year {this_year}?")
+      glue::glue("curveNumber {this_curveNumber} is {this_place}. Is the selected year {input$year_shiny}?")
     }
   })
 
