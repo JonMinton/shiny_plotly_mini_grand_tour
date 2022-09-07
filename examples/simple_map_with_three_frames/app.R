@@ -2,6 +2,7 @@ library(sf)
 library(plotly)
 library(tidyverse)
 library(shiny)
+library(shinyjs)
 
 fname <- system.file("shape/nc.shp", package="sf")
 nc <- st_read(fname)
@@ -24,12 +25,29 @@ fake_dta <-
 nc2 <- nc %>%
   left_join(fake_dta)
 
+# Javascript code to set input$sliderYear to be current year chosen by plotly slider
+jsCode <- "shinyjs.setSliderYear = function(){
+            // There are 4 elements with slider-label as class name, the first one is
+            // the text on the top RHS of the slider, the other 3 are the slider options
+
+            let text = document.getElementsByClassName('slider-label')[0].innerHTML;
+
+            // get year out of inner text
+            text = text.replace('year: ', '');
+
+            // Sends year_js to input$sliderYear
+            Shiny.setInputValue('sliderYear', text);
+            }
+      "
+
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-  
-  shinyjs::useShinyjs(),
-  
+
+  useShinyjs(),
+  # Adding new function setSliderYear to shiny js, access using js$setSliderYear()
+  extendShinyjs(text=jsCode, functions=c("setSliderYear")),
+
   # Application title
   titlePanel("Map with animation"),
   actionButton("generate_map", "Click to generate map"),
@@ -85,23 +103,11 @@ server <- function(input, output) {
       p <- make_map()
       b <- plotly_build(p)
       this_place <- b$x$data[[this_curveNumber + 1]]$name
-      
-      shinyjs::runjs("
-            // There are 4 elements with slider-label as class name, the first one is
-            // the text on the top RHS of the slider, the other 3 are the slider options
-
-            let text = document.getElementsByClassName('slider-label')[0].innerHTML;
-
-            // get year out of inner text
-
-            let year_js = text.replace('year: ', '');
-
-            // Sends year_js to input$year_shiny
-            Shiny.setInputValue('year_shiny', year_js);
-      "
-      )      
+      # setSliderYear contains the content in jsCode
+      # It sets input$sliderYear to be the current year the plot slider is set to
+      js$setSliderYear()
       # the +1 is needed as JavaScript is 0 indexed but R is 1 indexed
-      glue::glue("curveNumber {this_curveNumber} is {this_place}. Is the selected year {input$year_shiny}?")
+      glue::glue("curveNumber {this_curveNumber} is {this_place}. Is the selected year {input$sliderYear}?")
     }
   })
 
